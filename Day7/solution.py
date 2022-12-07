@@ -6,7 +6,7 @@ THRESHOLD = 100000
 class Node:
     children: List["Node"] = []
     parent: Optional["Node"] = None
-    _size: int = 0
+    size: Optional[int] = None
 
     def __init__(self, value):
         self.value = value
@@ -19,21 +19,23 @@ class Node:
     def __repr__(self):
         return f"Node({self.value})"
 
-    def size(self):
-        return self._size + sum(child.size() for child in self.children)
-
-
-def compute_sum(node: Node) -> int:
-    if node.size() > THRESHOLD:
-        return sum([compute_sum(child) for child in node.children])
-    return node.size()
-
 
 def find_parent(node: Node):
     if node.parent is None:
         return node
     else:
         return find_parent(node.parent)
+
+
+def calculate_size(node: Node):
+    # A recursive function that finds directories with no size, then looks through its children
+    # and calculates its total size.
+    dir_size = 0
+    for child in node.children:
+        if child.size is None:  # This means this is a directory we haven't sized yet
+            child.size = calculate_size(child)  # Recursively calculate size of child directory
+        dir_size += child.size  # Add the size of this child directory or file to the total
+    return dir_size
 
 
 if __name__ == "__main__":
@@ -52,16 +54,21 @@ if __name__ == "__main__":
                             node for node in current_node.children if node.value == current_directory)
                     else:
                         current_node = Node(current_directory)
-            elif "dir" in command:
+            elif "dir " in command:
                 _, directory_name = command.split("dir ")
                 child_node = Node(directory_name)
                 child_node.parent = current_node
                 current_node.children.append(child_node)
+                nodes.append(child_node)
             elif "$ ls" not in command:
                 file_size, file = command.split(" ")
                 leaf_node = Node(file)
-                leaf_node._size = int(file_size)
+                leaf_node.size = int(file_size)
                 current_node.children.append(leaf_node)
-                current_node._size += int(file_size)
         root = find_parent(current_node)
-        print(compute_sum(root))
+        final_size = 0
+        calculate_size(root)
+        for node in nodes:
+            if node.size <= THRESHOLD:
+                final_size += node.size
+        print(final_size)
