@@ -1,46 +1,67 @@
-import random
-from collections import defaultdict
+from typing import List, Optional
+
 THRESHOLD = 100000
+
+
+class Node:
+    children: List["Node"] = []
+    parent: Optional["Node"] = None
+    _size: int = 0
+
+    def __init__(self, value):
+        self.value = value
+        self.children = []
+        self.parent = None
+
+    def add_child(self, child):
+        self.children.append(child)
+
+    def __repr__(self):
+        return f"Node({self.value})"
+
+    def size(self):
+        return self._size + sum(child.size() for child in self.children)
+
+
+def compute_sum(node: Node) -> int:
+    if node.size() > THRESHOLD:
+        return sum([compute_sum(child) for child in node.children])
+    return node.size()
+
+
+def find_parent(node: Node):
+    if node.parent is None:
+        return node
+    else:
+        return find_parent(node.parent)
+
+
 if __name__ == "__main__":
     with open('input.txt', 'r') as fp:
         commands = list(map(str.strip, fp.readlines()))
-        stack = []
-        hierarchy = defaultdict(list)
-        directory_to_size = defaultdict(int)
+        nodes = []
+        current_node = None
         for command in commands:
             if '$ cd' in command:
-                _, directory = command.split('$ cd ')
-                if directory == "..":
-                    directory = stack.pop()
+                _, current_directory = command.split('$ cd ')
+                if current_directory == "..":
+                    current_node = current_node.parent
                 else:
-                    if stack:
-                        if len(stack) > 1:
-                            parent_directory = stack[-2]
-                            duplicated_directory = next(
-                                (directory for directory, children_directories in hierarchy.items()
-                                 if directory != parent_directory and current_directory in children_directories), None)
-                            if duplicated_directory:
-                                print(f"THIS IS WHAT PHIL WAS TALKING ABOUT - {current_directory} is in both {parent_directory} and {duplicated_directory}")
-                                directory = f"{parent_directory}/{directory}"
-                        hierarchy[stack[-1]].append(directory)
+                    if current_node:
+                        current_node = next(
+                            node for node in current_node.children if node.value == current_directory)
                     else:
-                        hierarchy[directory] = []
-                    stack.append(directory)
-            elif "$ ls" not in command and "dir" not in command:
+                        current_node = Node(current_directory)
+            elif "dir" in command:
+                _, directory_name = command.split("dir ")
+                child_node = Node(directory_name)
+                child_node.parent = current_node
+                current_node.children.append(child_node)
+            elif "$ ls" not in command:
                 file_size, file = command.split(" ")
-                current_directory = stack[-1]
-                directory_to_size[current_directory] += int(file_size)
-        sum_of_sizes = 0
-        for parent_directory, child_directories in hierarchy.items():
-            total_size_of_directory = directory_to_size[parent_directory] + \
-                                      sum(map(lambda x: directory_to_size.get(x, 0), child_directories))
-            print(f"Directory {parent_directory} has size {total_size_of_directory} bytes")
-            if total_size_of_directory <= THRESHOLD:
-                sum_of_sizes += total_size_of_directory
-        for directory, size_of_directory in directory_to_size.items():
-            if directory not in hierarchy.keys():
-                print(f"Directory {directory} has size {size_of_directory} bytes")
-                if size_of_directory <= THRESHOLD:
-                    sum_of_sizes += size_of_directory
-        print(sum_of_sizes)
-
+                leaf_node = Node(file)
+                leaf_node._size = int(file_size)
+                current_node.children.append(leaf_node)
+                current_node._size += int(file_size)
+        root = find_parent(current_node)
+        print(compute_sum(root))
