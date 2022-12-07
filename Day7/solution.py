@@ -21,7 +21,7 @@ if __name__ == "__main__":
                                  if directory != parent_directory and current_directory in children_directories), None)
                             if duplicated_directory:
                                 print(f"THIS IS WHAT PHIL WAS TALKING ABOUT - {current_directory} is in both {parent_directory} and {duplicated_directory}")
-                                directory = f"{directory}_{random.randint(0, 1000)}"
+                                directory = f"{parent_directory}/{directory}"
                         hierarchy[stack[-1]].append(directory)
                     else:
                         hierarchy[directory] = []
