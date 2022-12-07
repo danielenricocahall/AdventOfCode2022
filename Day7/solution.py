@@ -1,3 +1,4 @@
+import random
 from collections import defaultdict
 THRESHOLD = 100000
 if __name__ == "__main__":
@@ -13,6 +14,14 @@ if __name__ == "__main__":
                     directory = stack.pop()
                 else:
                     if stack:
+                        if len(stack) > 1:
+                            parent_directory = stack[-2]
+                            duplicated_directory = next(
+                                (directory for directory, children_directories in hierarchy.items()
+                                 if directory != parent_directory and current_directory in children_directories), None)
+                            if duplicated_directory:
+                                print(f"THIS IS WHAT PHIL WAS TALKING ABOUT - {current_directory} is in both {parent_directory} and {duplicated_directory}")
+                                directory = f"{directory}_{random.randint(0, 1000)}"
                         hierarchy[stack[-1]].append(directory)
                     else:
                         hierarchy[directory] = []
@@ -27,7 +36,6 @@ if __name__ == "__main__":
                                       sum(map(lambda x: directory_to_size.get(x, 0), child_directories))
             print(f"Directory {parent_directory} has size {total_size_of_directory} bytes")
             if total_size_of_directory <= THRESHOLD:
-
                 sum_of_sizes += total_size_of_directory
         for directory, size_of_directory in directory_to_size.items():
             if directory not in hierarchy.keys():
