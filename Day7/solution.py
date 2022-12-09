@@ -67,8 +67,21 @@ if __name__ == "__main__":
                 current_node.children.append(leaf_node)
         root = find_parent(current_node)
         final_size = 0
-        calculate_size(root)
+        size_of_all_files_on_disk = calculate_size(root)
         for node in nodes:
             if node.size <= THRESHOLD:
                 final_size += node.size
         print(final_size)
+        print(size_of_all_files_on_disk)
+        # PART 2
+        TOTAL_DISK_SPACE = 70000000
+        REQUIRED_DISK_SPACE = 30000000
+        remaining_disk_space = TOTAL_DISK_SPACE - size_of_all_files_on_disk
+        candidates_for_deletion = []
+        for node in nodes:
+            if remaining_disk_space + node.size >= REQUIRED_DISK_SPACE:
+                candidates_for_deletion.append(node)
+        smallest_directory = min(candidates_for_deletion, key=lambda x: x.size)
+        print(smallest_directory, smallest_directory.size)
+
+
